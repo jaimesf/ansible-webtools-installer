@@ -1,0 +1,45 @@
+{
+  "services": {
+    "CoAuthoring": {
+      "sql": {
+        "dbHost": "localhost",
+        "dbName": "onlyoffice",
+        "dbUser": "onlyoffice",
+        "dbPass": "onlyoffice"
+      },
+      "redis": {
+        "host": "localhost"
+      },
+      "token": {
+        "enable": {
+          "request": {
+            "inbox": true,
+            "outbox": true
+          },
+          "browser": true
+        },
+        "inbox": {
+          "header": "Authorization"
+        },
+        "outbox": {
+          "header": "Authorization"
+        }
+      },
+      "secret": {
+        "inbox": {
+          "string": "{{secret_onlyoffice}}"
+        },
+        "outbox": {
+          "string": "{{secret_onlyoffice}}"
+        },
+        "session": {
+          "string": "{{secret_onlyoffice}}"
+        }
+      }
+    }
+  },
+  "rabbitmq": {
+    "url": "amqp://guest:guest@localhost"
+  }
+}
+

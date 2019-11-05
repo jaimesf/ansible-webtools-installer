@@ -1,0 +1,41 @@
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{nexus_domain}};
+    location / {
+       return 301 https://$host$request_uri;
+    }
+
+    location /.well-known/acme-challenge/ {
+       root /var/www/certbot;
+    }
+
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{nexus_domain}};
+
+    add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
+    client_max_body_size 20000M;
+
+    set $upstream_nexus http://nexus:8081;
+
+    location / {
+      proxy_pass $upstream_nexus;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto "https";
+    }
+
+    ssl_certificate /etc/letsencrypt/live/{{nexus_domain}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{nexus_domain}}/privkey.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+

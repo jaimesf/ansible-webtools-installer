@@ -1,0 +1,24 @@
+---
+- name: 3 minutes pause execution to wait for nexus/jenkins generate admin password
+  pause:
+    minutes: 3
+  when: install_nexus or install_jenkins
+
+- name: Get jenkins password admin 
+  command: "docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword"
+  register: jenkins_admin_password_command
+  when: install_jenkins
+
+- name: Get Nexus password admin 
+  command: "docker exec -it nexus cat /nexus-data/admin.password"
+  register: nexus_admin_password_command
+  when: install_nexus
+
+- name: Show jenkins password admin 
+  debug: msg="Jenkins admin password is {{jenkins_admin_password_command.stdout}}"
+  when: install_jenkins
+
+- name: Show nexus password admin 
+  debug: msg="nexus admin password is {{nexus_admin_password_command.stdout}}"
+  when: install_nexus
+

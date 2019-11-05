@@ -1,0 +1,74 @@
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{collabora_domain}};
+    location / {
+       return 301 https://$host$request_uri;
+    }
+
+    location /.well-known/acme-challenge/ {
+       root /var/www/certbot;
+    }
+
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{collabora_domain}};
+
+    set $upstream_collabora http://collabora:9980;
+
+    # static files
+    location ^~ /loleaflet {
+        proxy_pass $upstream_collabora;
+        proxy_set_header Host $http_host;
+    }
+
+    # WOPI discovery URL
+    location ^~ /hosting/discovery {
+        proxy_pass $upstream_collabora;
+        proxy_set_header Host $http_host;
+    }
+
+    # Capabilities
+    location ^~ /hosting/capabilities {
+        proxy_pass $upstream_collabora;
+        proxy_set_header Host $http_host;
+    }
+
+    # main websocket
+    location ~ ^/lool/(.*)/ws$ {
+        proxy_pass $upstream_collabora;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $http_host;
+        proxy_read_timeout 36000s;
+    }
+
+    # download, presentation and image upload
+    location ~ ^/lool {
+        proxy_pass $upstream_collabora;
+        proxy_set_header Host $http_host;
+    }
+
+    # Admin Console websocket
+    location ^~ /lool/adminws {
+        proxy_pass $upstream_collabora;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $http_host;
+        proxy_read_timeout 36000s;
+    }
+
+
+
+    ssl_certificate /etc/letsencrypt/live/{{collabora_domain}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{collabora_domain}}/privkey.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+

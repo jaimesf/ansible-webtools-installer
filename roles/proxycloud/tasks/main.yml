@@ -1,0 +1,373 @@
+---
+- name: Upload nextcloud.conf without https
+  template:
+    src: "templates/nextcloud.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/nextcloud.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_nextcloud
+
+- name: Upload email.conf without https
+  template:
+    src: "templates/email.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/email.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_email
+
+- name: Upload collabora.conf without https
+  template:
+    src: "templates/collabora.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/collabora.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_collabora
+
+- name: Upload onlyoffice.conf without https
+  template:
+    src: "templates/onlyoffice.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/onlyoffice.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_onlyoffice
+
+### Create local certs directories
+- name: Create cloud cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_nextcloud
+
+- name: Create mail cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_email
+
+- name: Create collabora cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_collabora
+
+- name: Create onlyoffice cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_onlyoffice
+
+
+### Upload local certs
+- name: Copy cert cert cloud
+  copy:
+    src: files/cloud_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_nextcloud
+
+- name: Copy cert chain cloud
+  copy:
+    src: files/cloud_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_nextcloud
+
+- name: Copy cert key cloud
+  copy:
+    src: files/cloud_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_nextcloud
+
+- name: Create cert fullchain from cert and chain cloud
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_nextcloud
+
+- name: Copy cert cert mail
+  copy:
+    src: files/mail_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_email
+
+- name: Copy cert chain mail
+  copy:
+    src: files/mail_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_email
+
+- name: Copy cert key mail
+  copy:
+    src: files/mail_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_email
+
+- name: Create cert fullchain from cert and chain mail
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_email
+
+- name: Copy cert cert collabora
+  copy:
+    src: files/collabora_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_collabora
+
+- name: Copy cert chain collabora
+  copy:
+    src: files/collabora_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_collabora
+
+- name: Copy cert key collabora
+  copy:
+    src: files/collabora_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_collabora
+
+- name: Create cert fullchain from cert and chain collabora
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_collabora
+
+- name: Copy cert cert onlyoffice
+  copy:
+    src: files/onlyoffice_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_onlyoffice
+
+- name: Copy cert chain onlyoffice
+  copy:
+    src: files/onlyoffice_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_onlyoffice
+
+- name: Copy cert key onlyoffice
+  copy:
+    src: files/onlyoffice_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_onlyoffice
+
+- name: Create cert fullchain from cert and chain collabora
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_onlyoffice
+
+### Generate public certs via letsencrypt
+- name: check if cert cloud exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/"
+  register: cert_cloud_directory
+  when: public_server and install_nextcloud
+
+- name: Set cloud domain to cert
+  set_fact:
+    domain_certbot: "{{cloud_domain}}"
+  when: public_server and install_nextcloud and not cert_cloud_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh cloud
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_nextcloud and not cert_cloud_directory.stat.exists
+
+- name: Execute cert cloud
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_nextcloud and not cert_cloud_directory.stat.exists
+
+- name: check if cert cloud exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{cloud_domain}}/"
+  register: cert_cloud_directory
+  when: public_server and install_nextcloud
+
+- name: Fail if cloud cert not exist
+  fail:
+    msg: "Cert for {{cloud_domain}} not generated. Please check logs."
+  when: public_server and install_nextcloud and not cert_cloud_directory.stat.exists
+
+- name: check if cert mail exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/"
+  register: cert_mail_directory
+  when: public_server and install_email
+
+- name: Set mail domain to cert
+  set_fact:
+    domain_certbot: "{{mail_domain}}"
+  when: public_server and install_email and not cert_mail_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh mail
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_email and not cert_mail_directory.stat.exists
+
+- name: Execute cert mail
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_email and not cert_mail_directory.stat.exists
+
+- name: check if cert mail exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{mail_domain}}/"
+  register: cert_mail_directory
+  when: public_server and install_email
+
+- name: Fail if mail cert not exist
+  fail:
+    msg: "Cert for {{mail_domain}} not generated. Please check logs."
+  when: public_server and install_email and not cert_mail_directory.stat.exists
+
+- name: check if cert collabora exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/"
+  register: cert_collabora_directory
+  when: public_server and install_collabora
+
+- name: Set collabora domain to cert
+  set_fact:
+    domain_certbot: "{{collabora_domain}}"
+  when: public_server and install_collabora and not cert_collabora_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh collabora
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_collabora and not cert_collabora_directory.stat.exists
+
+- name: Execute cert collabora
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_collabora and not cert_collabora_directory.stat.exists
+
+- name: check if cert collabora exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{collabora_domain}}/"
+  register: cert_collabora_directory
+  when: public_server and install_collabora
+
+- name: Fail if collabora cert not exist
+  fail:
+    msg: "Cert for {{collabora_domain}} not generated. Please check logs."
+  when: public_server and install_collabora and not cert_collabora_directory.stat.exists
+
+- name: check if cert onlyoffice exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/"
+  register: cert_onlyoffice_directory
+  when: public_server and install_onlyoffice
+
+- name: Set onlyoffice domain to cert
+  set_fact:
+    domain_certbot: "{{onlyoffice_domain}}"
+  when: public_server and install_onlyoffice and not cert_onlyoffice_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh onlyoffice
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_onlyoffice and not cert_onlyoffice_directory.stat.exists
+
+- name: Execute cert onlyoffice
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_onlyoffice and not cert_onlyoffice_directory.stat.exists
+
+- name: check if cert onlyoffice exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/"
+  register: cert_onlyoffice_directory
+  when: public_server and install_onlyoffice
+
+- name: Fail if onlyoffice cert not exist
+  fail:
+    msg: "Cert for {{onlyoffice_domain}} not generated. Please check logs."
+  when: public_server and install_onlyoffice and not cert_onlyoffice_directory.stat.exists
+
+- name: Remove containers proxy
+  command: chdir="{{ directory_deploy_proxy }}/" docker-compose down -v
+  when: install_nextcloud or install_email or install_collabora or install_onlyoffice
+
+- name: Execute docker-compose proxy
+  command: chdir="{{ directory_deploy_proxy }}/" docker-compose up -d
+  when: install_nextcloud or install_email or install_collabora or install_onlyoffice
+
+
+
+
+

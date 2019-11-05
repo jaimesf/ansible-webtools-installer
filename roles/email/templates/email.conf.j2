@@ -1,0 +1,40 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{mail_domain}};
+    location / {
+       return 301 https://$host$request_uri;
+    }
+
+    location /.well-known/acme-challenge/ {
+       root /var/www/certbot;
+    }
+
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{mail_domain}};
+
+    set $upstream_email http://email:80;
+
+    location / {
+        proxy_pass $upstream_email;
+        proxy_redirect     off;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Host $server_name;
+
+    }
+
+
+
+    ssl_certificate /etc/letsencrypt/live/{{mail_domain}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{mail_domain}}/privkey.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+

@@ -1,0 +1,54 @@
+---
+- name: Create gitlab dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_devtools}}/gitlab"
+    - "{{directory_volumes_devtools}}/gitlab/config"
+    - "{{directory_volumes_devtools}}/gitlab/logs"
+    - "{{directory_volumes_devtools}}/gitlab/data"
+  become: yes
+  when: install_gitlab
+
+- name: Upload updateGitlab.sh
+  template:
+    src: "templates/updateGitlab.sh.j2"
+    dest: "{{directory_scripts_devtools}}/gitlab/updategGitlab.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: install_gitlab
+
+- name: Upload docker-compose gitlab
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_devtools}}/gitlab/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_gitlab
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_devtools }}/gitlab/" docker-compose up -d
+  when: install_gitlab
+
+- name: Upload gitlab.conf final public
+  template:
+    src: "templates/gitlab.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/gitlab.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_gitlab
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_gitlab
+
+
+

@@ -1,0 +1,50 @@
+---
+- name: Create nexus dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_devtools}}/nexus"
+    - "{{directory_volumes_devtools}}/nexus"
+  become: yes
+  when: install_nexus
+
+- name: Upload updateNexus.sh
+  template:
+    src: "templates/updateNexus.sh.j2"
+    dest: "{{directory_scripts_devtools}}/nexus/updateNexus.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: install_nexus
+
+- name: Upload docker-compose nexus
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_devtools}}/nexus/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_nexus
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_devtools }}/nexus/" docker-compose up -d
+  when: install_nexus
+
+- name: Upload nexus.conf final public
+  template:
+    src: "templates/nexus.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/nexus.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_nexus
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_nexus
+

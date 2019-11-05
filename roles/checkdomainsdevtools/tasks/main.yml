@@ -1,0 +1,86 @@
+---
+- name: Get server public IP
+  command: "curl https://ipinfo.io/ip"
+  register: command_ip
+  when: public_server
+
+- set_fact:
+    public_ip: "{{ command_ip.stdout }}"
+  when: public_server
+
+- debug: msg="Ip publica {{public_ip}}"
+  when: public_server
+
+- name: Get server IP root domain
+  command: "dig +short @8.8.8.8 {{root_domain}}"
+  register: command_domain_root_ip
+  when: public_server and install_root
+
+- name: Set domain root ip var
+  set_fact:
+    domain_root_ip: "{{command_domain_root_ip.stdout_lines[-1]}}"
+  when: public_server and install_root
+
+- debug: msg="Public IP for {{root_domain}} is {{domain_root_ip}}"
+  when: public_server and install_root
+
+- name: Check public ip with root dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{root_domain}} ip({{domain_root_ip}})"
+  when: public_server and install_root and public_ip != domain_root_ip
+
+- name: Get server IP gitlab domain
+  command: "dig +short {{gitlab_domain}}"
+  register: command_domain_gitlab_ip
+  when: public_server
+
+- name: Set domain gitlab ip var
+  set_fact:
+    domain_gitlab_ip: "{{command_domain_gitlab_ip.stdout_lines[-1]}}"
+  when: public_server
+
+- debug: msg="Public IP for {{gitlab_domain}} is {{domain_gitlab_ip}}"
+  when: public_server
+
+- name: Check public ip with gitlab dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{gitlab_domain}} ip({{domain_gitlab_ip}})"
+  when: public_server and public_ip != domain_gitlab_ip
+
+
+- name: Get server IP jenkins domain
+  command: "dig +short {{jenkins_domain}}"
+  register: command_domain_jenkins_ip
+  when: public_server and install_jenkins
+
+- name: Set domain jenkins ip var
+  set_fact:
+    domain_jenkins_ip: "{{command_domain_jenkins_ip.stdout_lines[-1]}}"
+  when: public_server and install_jenkins
+
+- debug: msg="Public IP for {{jenkins_domain}} is {{domain_jenkins_ip}}"
+  when: public_server and install_jenkins
+
+- name: Check public ip with jenkins dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{jenkins_domain}} ip({{domain_jenkins_ip}})"
+  when: public_server and install_jenkins and public_ip != domain_jenkins_ip
+
+- name: Get server IP nexus domain
+  command: "dig +short {{nexus_domain}}"
+  register: command_domain_nexus_ip
+  when: public_server and install_nexus
+
+- name: Set domain nexus ip var
+  set_fact:
+    domain_nexus_ip: "{{command_domain_nexus_ip.stdout_lines[-1]}}"
+  when: public_server and install_nexus
+
+- debug: msg="Public IP for {{nexus_domain}} is {{domain_nexus_ip}}"
+  when: public_server and install_nexus
+
+- name: Check public ip with nexus dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{nexus_domain}} ip({{domain_nexus_ip}})"
+  when: public_server and install_nexus and public_ip != domain_nexus_ip
+

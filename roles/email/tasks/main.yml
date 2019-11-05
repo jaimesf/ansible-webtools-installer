@@ -1,0 +1,41 @@
+---
+- name: Create email dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_cloud}}/email/"
+    - "{{directory_volumes_cloud}}/email/"
+  become: yes
+  when: install_email
+
+- name: Upload docker-compose email
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_cloud}}/email/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_email
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_cloud }}/email/" docker-compose up -d
+  when: install_email
+
+- name: Upload email.conf final public
+  template:
+    src: "templates/email.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/email.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_email
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_email
+

@@ -1,0 +1,20 @@
+---
+- hosts: all
+  vars_files:
+    - global_vars.yml
+  roles:
+    - role: checkdocker
+    - role: checkdomainscloud
+    - role: checkdomainsdevtools
+    - role: proxy
+    - role: proxycloud
+    - role: proxydevtools
+    - role: email
+    - role: collabora
+    - role: onlyoffice
+    - role: nextcloud
+    - role: gitlab
+    - role: jenkins
+    - role: nexus
+    - role: showadminpasswords
+

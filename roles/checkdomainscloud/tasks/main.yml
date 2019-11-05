@@ -1,0 +1,124 @@
+---
+- name: Get server public IP
+  command: "curl https://ipinfo.io/ip"
+  register: command_ip
+  when: public_server
+
+- set_fact:
+    public_ip: "{{ command_ip.stdout }}"
+  when: public_server
+
+- debug: msg="Public IP {{public_ip}}"
+  when: public_server
+
+- name: Get server IP root domain
+  command: "dig +short @8.8.8.8 {{root_domain}}"
+  register: command_domain_root_ip
+  when: public_server and install_root
+
+- name: Set domain root ip var
+  set_fact:
+    domain_root_ip: "{{command_domain_root_ip.stdout_lines[-1]}}"
+  when: public_server and install_root
+
+- debug: msg="Public IP for {{root_domain}} is {{domain_root_ip}}"
+  when: public_server and install_root
+
+- name: Check public ip with root dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{root_domain}} ip({{domain_root_ip}})"
+  when: public_server and install_root and public_ip != domain_root_ip
+
+- name: Get server IP cloud domain
+  command: "dig +short {{cloud_domain}}"
+  register: command_domain_cloud_ip
+  when: public_server and install_nextcloud
+
+- name: Set domain cloud ip var
+  set_fact:
+    domain_cloud_ip: "{{command_domain_cloud_ip.stdout_lines[-1]}}"
+  when: public_server and install_nextcloud
+
+- debug: msg="Public IP for {{cloud_domain}} is {{domain_cloud_ip}}"
+  when: public_server and install_nextcloud
+
+- name: Check public ip with cloud dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{cloud_domain}} ip({{domain_cloud_ip}})"
+  when: public_server and install_nextcloud and public_ip != domain_cloud_ip
+
+
+- name: Get server IP mail domain
+  command: "dig +short {{mail_domain}}"
+  register: command_domain_mail_ip
+  when: public_server and install_email
+
+- name: Set domain mail ip var
+  set_fact:
+    domain_mail_ip: "{{command_domain_mail_ip.stdout_lines[-1]}}"
+  when: public_server and install_email
+
+- debug: msg="Public IP for {{mail_domain}} is {{domain_mail_ip}}"
+  when: public_server and install_email
+
+- name: Check public ip with mail dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{mail_domain}} ip({{domain_mail_ip}})"
+  when: public_server and install_email and public_ip != domain_mail_ip
+
+- name: Get server name mail MX domain
+  command: "dig +short MX {{root_domain}}"
+  register: command_domain_mail_name
+  when: public_server and install_email
+
+- name: Set domain mail MX var
+  set_fact:
+    domain_mail_name: "{{command_domain_mail_name.stdout_lines[-1]}}"
+  when: public_server and install_email
+
+- debug: msg="Public name MX for {{root_domain}} is {{domain_mail_name}}"
+  when: public_server and install_email
+
+- name: Check public ip with mail dns
+  fail:
+    msg: "Public MX name ({{domain_mail_name}}) is not the same as 10 {{mail_domain}}."
+  when: public_server and install_email and domain_mail_name != "10 {{mail_domain}}."
+
+
+- name: Get server IP collabora domain
+  command: "dig +short {{collabora_domain}}"
+  register: command_domain_collabora_ip
+  when: public_server and install_collabora
+
+- name: Set domain collabora ip var
+  set_fact:
+    domain_collabora_ip: "{{command_domain_collabora_ip.stdout_lines[-1]}}"
+  when: public_server and install_collabora
+
+- debug: msg="Public IP for {{collabora_domain}} is {{domain_collabora_ip}}"
+  when: public_server and install_collabora
+
+- name: Check public ip with collabora dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{collabora_domain}} ip({{domain_collabora_ip}})"
+  when: public_server and install_collabora and public_ip != domain_collabora_ip
+
+- name: Get server IP onlyoffice domain
+  command: "dig +short {{onlyoffice_domain}}"
+  register: command_domain_onlyoffice_ip
+  when: public_server and install_onlyoffice
+
+- name: Set domain onlyoffice ip var
+  set_fact:
+    domain_onlyoffice_ip: "{{command_domain_onlyoffice_ip.stdout_lines[-1]}}"
+  when: public_server and install_onlyoffice
+
+- debug: msg="Public IP for {{onlyoffice_domain}} is {{domain_onlyoffice_ip}}"
+  when: public_server and install_onlyoffice
+
+- name: Check public ip with onlyoffice dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{onlyoffice_domain}} ip({{domain_onlyoffice_ip}})"
+  when: public_server and install_onlyoffice and public_ip != domain_onlyoffice_ip
+
+

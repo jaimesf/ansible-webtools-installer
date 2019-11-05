@@ -1,0 +1,40 @@
+---
+- name: Create collabora dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_cloud}}/collabora/"
+  become: yes
+  when: install_collabora
+
+- name: Upload docker-compose collabora
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_cloud}}/collabora/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_collabora
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_cloud }}/collabora/" docker-compose up -d
+  when: install_collabora
+
+- name: Upload collabora.conf final public
+  template:
+    src: "templates/collabora.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/collabora.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_collabora
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_collabora
+

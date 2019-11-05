@@ -1,0 +1,30 @@
+resolver 127.0.0.11 valid=10s;
+
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    location / {
+        return 301 https://$host$request_uri;
+    }
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 default_server;
+    server_name _;
+
+    add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
+    client_max_body_size 20000M;
+
+    ssl_certificate /etc/letsencrypt/live/{{root_domain}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{root_domain}}/privkey.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+

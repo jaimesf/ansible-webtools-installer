@@ -1,0 +1,8 @@
+#!/bin/bash
+docker-compose down  -v
+docker rmi sonatype/nexus3:latest
+docker-compose up -d
+cd {{directory_deploy_proxy}}
+docker-compose stop
+docker-compose start
+

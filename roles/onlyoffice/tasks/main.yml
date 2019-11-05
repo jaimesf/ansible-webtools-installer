@@ -1,0 +1,64 @@
+---
+- name: Create onlyoffice dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_cloud}}/onlyoffice/"
+  become: yes
+  when: install_onlyoffice
+
+- name: Upload docker-compose onlyoffice
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_cloud}}/onlyoffice/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_onlyoffice
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_cloud }}/onlyoffice/" docker-compose up -d
+  when: install_onlyoffice
+
+- name: Upload onlyoffice.conf final public
+  template:
+    src: "templates/onlyoffice.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/onlyoffice.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_onlyoffice
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_onlyoffice
+
+- name: Upload local.json onlyoffice
+  template:
+    src: "templates/local.json.j2"
+    dest: "{{directory_scripts_cloud}}/onlyoffice/local.json"
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  when: install_onlyoffice
+
+- name: Copy local.json into container
+  command: chdir="{{ directory_scripts_cloud }}/onlyoffice/" docker cp ./local.json onlyoffice:/etc/onlyoffice/documentserver/local.json
+  when: install_onlyoffice
+
+- name: Remove local.json file
+  file:
+    state: absent
+    path: "{{directory_scripts_cloud}}/onlyoffice/local.json"
+  become: yes
+  when: install_onlyoffice
+
+- name: Restart onlyoffice
+  command: "docker restart onlyoffice"
+  when: install_onlyoffice

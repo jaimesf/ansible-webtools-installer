@@ -1,0 +1,188 @@
+---
+- name: Create nginx dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_deploy_proxy}}/data/nginx"
+    - "{{directory_deploy_proxy}}/data/certbot"
+  become: yes
+  when: install_proxy_base
+
+- name: Upload docker-compose without entrypoint reload certs on certbot
+  template:
+    src: "templates/docker-compose.yml-noentrypointcertbot.j2"
+    dest: "{{directory_deploy_proxy}}/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_proxy_base
+
+- name: Upload root.conf without https
+  template:
+    src: "templates/root.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/root.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_proxy_base
+
+- name: Create a docker network
+  docker_network:
+    name: proxy_network
+  become: yes
+  when: install_proxy_base
+
+### Create local certs directories
+- name: Create www config dir
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/www/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_proxy_base
+
+- name: Create root cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_proxy_base
+
+### Upload local certs
+- name: Copy cert cert root
+  copy:
+    src: files/root_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_root and install_proxy_base
+
+- name: Copy cert chain root
+  copy:
+    src: files/root_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_root and install_proxy_base
+
+- name: Copy cert key root
+  copy:
+    src: files/root_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_root and install_proxy_base
+
+- name: Create cert fullchain from cert and chain root
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_root and install_proxy_base
+
+### Upload ssh config for nginx
+- name: Copy nginx ssh config
+  copy:
+    src: files/options-ssl-nginx.conf
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/options-ssl-nginx.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_proxy_base
+
+- name: Generate DH Parameters
+  openssl_dhparam:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/ssl-dhparams.pem"
+    size: 2048
+  when: not public_server and install_proxy_base
+
+### Generate public cert via letsencrypt
+- name: check if cert root exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/"
+  register: cert_root_directory
+  when: public_server and install_root and install_proxy_base
+
+- name: Set root domain to cert
+  set_fact:
+    domain_certbot: "{{root_domain}}"
+  when: public_server and install_root and install_proxy_base and not cert_root_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh root
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_root and install_proxy_base and not cert_root_directory.stat.exists
+
+- name: Execute cert root
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_root and install_proxy_base and not cert_root_directory.stat.exists
+
+- name: check if cert root exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{root_domain}}/"
+  register: cert_root_directory
+  when: public_server and install_root and install_proxy_base
+
+- name: Fail if root cert not exist
+  fail:
+    msg: "Cert for {{root_domain}} not generated. Please check logs."
+  when: public_server and install_root and install_proxy_base and not cert_root_directory.stat.exists
+
+- name: Upload final docker-compose certbot
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_deploy_proxy}}/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: public_server and install_proxy_base
+
+- name: Upload final docker-compose no certbot
+  template:
+    src: "templates/docker-compose-nocertbot.yml.j2"
+    dest: "{{directory_deploy_proxy}}/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_proxy_base
+
+- name: Remove containers proxy
+  command: chdir="{{ directory_deploy_proxy }}/" docker-compose down -v
+  when: install_proxy_base
+
+- name: Upload root.conf final public
+  template:
+    src: "templates/root.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/root.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_root and install_proxy_base
+
+- name: Execute docker-compose final
+  command: chdir="{{ directory_deploy_proxy }}/" docker-compose up -d
+  when: install_proxy_base
+
+
+
+
+

@@ -1,0 +1,81 @@
+---
+- name: Create nextcloud dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_cloud}}/nextcloud"
+    - "{{directory_volumes_cloud}}/nextcloud/nextcloud"
+    - "{{directory_volumes_cloud}}/nextcloud/mariadb"
+    - "{{directory_volumes_cloud}}/nextcloud/redis"
+  become: yes
+  when:  install_nextcloud
+
+
+### Upload file to modify config.php
+- name: Upload addVariablesConfig.sh
+  template:
+    src: "templates/addVariablesConfig.sh.j2"
+    dest: "{{directory_scripts_cloud}}/nextcloud/addVariablesConfig.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: 'u=rwx,g=rx,o=rx'
+  when:  install_nextcloud
+
+- name: Upload updateNextcloud.sh
+  template:
+    src: "templates/updateNextcloud.sh.j2"
+    dest: "{{directory_scripts_cloud}}/nextcloud/updateNextcloud.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when:  install_nextcloud
+
+- name: Upload docker-compose nextcloud
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_cloud}}/nextcloud/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_nextcloud
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_cloud }}/nextcloud/" docker-compose up -d
+  when:  install_nextcloud
+
+- name: Upload nextcloud.conf final public
+  template:
+    src: "templates/nextcloud.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/nextcloud.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_nextcloud
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when:  install_nextcloud
+
+- name: Pause execution to wait for nextcloud finish config
+  pause:
+    minutes: 3
+  when:  install_nextcloud
+
+### Execute Nextcloud additional var configuration script
+- name: Execute addVariablesConfig.sh
+  command: chdir="{{ directory_scripts_cloud }}/nextcloud/" ./addVariablesConfig.sh
+  become: yes
+  when:  install_nextcloud
+
+- name: Remove addVariablesConfig.sh file
+  file:
+    state: absent
+    path: "{{directory_scripts_cloud}}/nextcloud/addVariablesConfig.sh"
+  become: yes
+  when:  install_nextcloud
+

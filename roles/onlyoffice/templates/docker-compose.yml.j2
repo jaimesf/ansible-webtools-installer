@@ -1,0 +1,18 @@
+version: '3' 
+
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    hostname: {{onlyoffice_domain}}
+    restart: unless-stopped
+    environment:
+      - ONLYOFFICE_HTTPS_HSTS_ENABLED=true
+      - SSL_VERIFY_CLIENT=false
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+networks:
+  default:
+    external:
+      name: proxy_network
+

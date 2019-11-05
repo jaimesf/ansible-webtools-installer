@@ -1,0 +1,73 @@
+---
+- name: Install aptitude using apt
+  apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+  become: yes
+
+- name: Install prerequisites docker
+  apt:
+    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg2' ,'software-properties-common', 'dnsutils', 'openssl']
+    update_cache: yes
+  become: yes
+
+- name: Add Docker GPG key
+  apt_key: url=https://download.docker.com/linux/{{ansible_distribution|lower}}/gpg
+  become: yes
+
+- name: Add Docker APT repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/{{ansible_distribution|lower}} {{ansible_distribution_release}} stable
+  become: yes
+
+- name: Install Docker
+  apt:
+    name: ['docker-ce','docker-ce-cli', 'containerd.io']
+    update_cache: yes
+  become: yes
+
+- name: Add user no root to docker group
+  user:
+    name: "{{ ansible_ssh_user }}"
+    groups: "docker"
+    append: true
+  become: yes
+  when: ansible_ssh_user != "root"
+
+- name: reset ssh connection to allow user changes to affect 'current login user'
+  meta: reset_connection
+
+- name: Install prerequisites docker python
+  apt:
+    name: ['python', 'python-pip', 'python-setuptools', 'virtualenv', 'python3', 'python3-pip', 'python3-setuptools']
+    update_cache: yes
+  become: yes
+
+- name: Install Python docker
+  pip:
+    name: docker
+    state: present
+  become: yes
+
+- name: Download docker-compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/{{docker_compose_version}}/docker-compose-Linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  become: yes
+
+- name: Create a symbolic link to docker-compose
+  file:
+    src: /usr/local/bin/docker-compose
+    dest: /usr/bin/docker-compose
+    mode: '0755'
+    owner: root
+    group: root
+    state: link
+  become: yes
+
+## Fix with bug on client python docker on Debian
+- name: Copy ssl_match_hostname to backports
+  command: "cp -r /usr/local/lib/python2.7/dist-packages/backports/ssl_match_hostname/ /usr/lib/python2.7/dist-packages/backports"
+  when: ansible_distribution == "Debian"
+  become: yes
+
+ 

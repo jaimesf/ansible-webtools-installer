@@ -1,0 +1,283 @@
+---
+- name: Upload gitlab.conf without https
+  template:
+    src: "templates/gitlab.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/gitlab.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_gitlab
+
+- name: Upload jenkins.conf without https
+  template:
+    src: "templates/jenkins.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/jenkins.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_jenkins
+
+- name: Upload nexus.conf without https
+  template:
+    src: "templates/nexus.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/nexus.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_nexus
+
+### Create local certs directories
+- name: Create gitlab cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_gitlab
+
+- name: Create jenkins cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_jenkins
+
+- name: Create nexus cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_nexus
+
+### Upload local certs
+- name: Copy cert cert gitlab
+  copy:
+    src: files/gitlab_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_gitlab
+
+- name: Copy cert chain gitlab
+  copy:
+    src: files/gitlab_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_gitlab
+
+- name: Copy cert key gitlab
+  copy:
+    src: files/gitlab_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_gitlab
+
+- name: Create cert fullchain from cert and chain gitlab
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_gitlab
+
+- name: Copy cert cert jenkins
+  copy:
+    src: files/jenkins_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_jenkins
+
+- name: Copy cert chain jenkins
+  copy:
+    src: files/jenkins_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_jenkins
+
+- name: Copy cert key jenkins
+  copy:
+    src: files/jenkins_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_jenkins
+
+- name: Create cert fullchain from cert and chain jenkins
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_jenkins
+
+- name: Copy cert cert nexus
+  copy:
+    src: files/nexus_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/cert.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_nexus
+
+- name: Copy cert chain nexus
+  copy:
+    src: files/nexus_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/chain.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_nexus
+
+- name: Copy cert key nexus
+  copy:
+    src: files/nexus_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/privkey.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_nexus
+
+- name: Create cert fullchain from cert and chain nexus
+  shell: cat cert.pem chain.pem > fullchain.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/"
+    creates: fullchain.pem
+  when: not public_server and install_nexus
+
+### Generate public certs via letsencrypt
+- name: check if cert gitlab exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/"
+  register: cert_gitlab_directory
+  when: public_server and install_gitlab
+
+- name: Set gitlab domain to cert
+  set_fact:
+    domain_certbot: "{{gitlab_domain}}"
+  when: public_server and install_gitlab and not cert_gitlab_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh gitlab
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_gitlab and not cert_gitlab_directory.stat.exists
+
+- name: Execute cert gitlab
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_gitlab and not cert_gitlab_directory.stat.exists
+
+- name: check if cert gitlab exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{gitlab_domain}}/"
+  register: cert_gitlab_directory
+  when: public_server and install_gitlab
+
+- name: Fail if gitlab cert not exist
+  fail:
+    msg: "Cert for {{gitlab_domain}} not generated. Please check logs."
+  when: public_server and install_gitlab and not cert_gitlab_directory.stat.exists
+
+- name: check if cert jenkins exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/"
+  register: cert_jenkins_directory
+  when: public_server and install_jenkins
+
+- name: Set jenkins domain to cert
+  set_fact:
+    domain_certbot: "{{jenkins_domain}}"
+  when: public_server and install_jenkins and not cert_jenkins_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh jenkins
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_jenkins and not cert_jenkins_directory.stat.exists
+
+- name: Execute cert jenkins
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_jenkins and not cert_jenkins_directory.stat.exists
+
+- name: check if cert jenkins exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{jenkins_domain}}/"
+  register: cert_jenkins_directory
+  when: public_server and install_jenkins
+
+- name: Fail if jenkins cert not exist
+  fail:
+    msg: "Cert for {{jenkins_domain}} not generated. Please check logs."
+  when: public_server and install_jenkins and not cert_jenkins_directory.stat.exists
+
+- name: check if cert nexus exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/"
+  register: cert_nexus_directory
+  when: public_server and install_nexus
+
+- name: Set nexus domain to cert
+  set_fact:
+    domain_certbot: "{{nexus_domain}}"
+  when: public_server and install_nexus and not cert_nexus_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh nexus
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_nexus and not cert_nexus_directory.stat.exists
+
+- name: Execute cert nexus
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_nexus and not cert_nexus_directory.stat.exists
+
+- name: check if cert nexus exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{nexus_domain}}/"
+  register: cert_nexus_directory
+  when: public_server and install_nexus
+
+- name: Fail if nexus cert not exist
+  fail:
+    msg: "Cert for {{nexus_domain}} not generated. Please check logs."
+  when: public_server and install_nexus and not cert_nexus_directory.stat.exists
+
+- name: Remove containers proxy
+  command: chdir="{{ directory_deploy_proxy }}/" docker-compose down -v
+  when: install_gitlab or install_jenkins or install_nexus
+
+- name: Execute docker-compose proxy
+  command: chdir="{{ directory_deploy_proxy }}/" docker-compose up -d
+  when: install_gitlab or install_jenkins or install_nexus
+
+
+
+
+

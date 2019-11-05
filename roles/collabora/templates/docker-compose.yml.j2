@@ -1,0 +1,21 @@
+version: '3' 
+
+services:
+  collabora:
+    image: collabora/code
+    container_name: collabora
+    hostname: {{collabora_domain}}
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - "extra_params=--o:ssl.enable=false --o:ssl.termination=true"
+      - username=admin
+      - password={{secret_collabora}}
+      - server_name={{collabora_domain}}
+      - domain={{cloud_domain}}
+networks:
+  default:
+    external:
+      name: proxy_network
+

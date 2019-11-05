@@ -1,0 +1,59 @@
+---
+- name: Create jenkins dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_devtools}}/jenkins"
+    - "{{directory_volumes_devtools}}/jenkins"
+  become: yes
+  when: install_jenkins
+
+- name: Upload updateJenkins.sh
+  template:
+    src: "templates/updateJenkins.sh.j2"
+    dest: "{{directory_scripts_devtools}}/jenkins/updateJenkins.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: install_jenkins
+
+- name: Copy Dockerfile
+  copy:
+    src: files/Dockerfile
+    dest: "{{directory_scripts_devtools}}/jenkins/Dockerfile"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_jenkins
+
+- name: Upload docker-compose jenkins
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_devtools}}/jenkins/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_jenkins
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_devtools }}/jenkins/" docker-compose up -d
+  when: install_jenkins
+
+- name: Upload jenkins.conf final public
+  template:
+    src: "templates/jenkins.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/jenkins.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_jenkins
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_jenkins
+

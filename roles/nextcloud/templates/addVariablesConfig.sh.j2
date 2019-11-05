@@ -1,0 +1,13 @@
+#!/bin/bash
+
+sed -i 's/http:\/\/localhost/https:\/\/{{cloud_domain}}/g' {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+sed -i 's/);//g' {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ \'overwriteprotocol\' \=\> \'https\', >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ \'overwritehost\' \=\> \'{{cloud_domain}}\', >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ \'trusted_proxies\' \=\>  >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ array \( >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ 0 \=\> \'172.17.0.1\', >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ 0 \=\> \'127.0.0.1\', >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo \ \ '),' >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+echo ');' >> {{directory_volumes_cloud}}/nextcloud/nextcloud/config/config.php
+docker restart nextcloud

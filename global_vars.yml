@@ -1,0 +1,81 @@
+---
+# The server is public and use letsencrypt to generate certs, and check domains
+public_server: True
+
+# Create proxy base
+install_proxy_base: True
+
+# Create root domain with ssh cert
+install_root: True
+
+# Install nextcloud server
+install_nextcloud: True
+
+# Install email server
+install_email: True
+
+# Install collabora server
+install_collabora: True
+
+# Install onlyoffice server
+install_onlyoffice: True
+
+# Install gitlab server
+install_gitlab: True
+
+# Install jenkins server
+install_jenkins: True
+
+# Install nexus server
+install_nexus: True
+
+# Root domain (And email domain name)
+root_domain: "mydomain.com"
+
+# Subdomain for nextcloud installation
+cloud_domain: "cloud.{{root_domain}}"
+
+# Subdomain for email server installation
+mail_domain: "mail.{{root_domain}}"
+
+# Subdomain for collabora server installation
+collabora_domain: "collabora.{{root_domain}}"
+
+# Subdomain for onlyoffice server installation
+onlyoffice_domain: "onlyoffice.{{root_domain}}"
+
+# Subdomain for gitlab installation
+gitlab_domain: "gitlab.{{root_domain}}"
+
+# Subdomain for jenkins installation
+jenkins_domain: "jenkins.{{root_domain}}"
+
+# Subdomain for nexus installation
+nexus_domain: "nexus.{{root_domain}}"
+
+# Email to use on letsencrypt cert generator
+email_certbot: "admin@mydomain.com"
+
+# Root installation directory
+root_directory_deploy: "/opt"
+
+# Installation directory cloud
+directory_deploy_cloud: "{{root_directory_deploy}}/cloud"
+
+# Installation directory for data cloud
+directory_volumes_cloud: "{{directory_deploy_cloud}}/dockervolumes"
+
+# Installation directory for scripts cloud
+directory_scripts_cloud: "{{directory_deploy_cloud}}/dockerscripts"
+
+# Installation directory devtools
+directory_deploy_devtools: "{{root_directory_deploy}}/devtools"
+
+# Installation directory for data devtools
+directory_volumes_devtools: "{{directory_deploy_devtools}}/dockervolumes"
+
+# Installation directory for scripts devtools
+directory_scripts_devtools: "{{directory_deploy_devtools}}/dockerscripts"
+
+# Installation directory proxy
+directory_deploy_proxy: "{{root_directory_deploy}}/proxy"

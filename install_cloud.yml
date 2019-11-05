@@ -1,0 +1,14 @@
+---
+- hosts: all
+  vars_files:
+    - global_vars.yml
+  roles:
+    - role: checkdocker
+    - role: checkdomainscloud
+    - role: proxy
+    - role: proxycloud
+    - role: email
+    - role: collabora
+    - role: onlyoffice
+    - role: nextcloud
+

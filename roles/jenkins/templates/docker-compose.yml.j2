@@ -1,0 +1,19 @@
+version: '3' 
+
+services:
+  jenkins:
+    image: 'jenkins-devtools:latest'
+    build: .
+    container_name: jenkins
+    restart: unless-stopped
+    hostname: {{jenkins_domain}}
+    ports:
+      - '50000:50000'
+    volumes:
+      - {{directory_volumes_devtools}}/jenkins:/var/jenkins_home
+      - /etc/localtime:/etc/localtime:ro
+
+networks:
+  default:
+    external:
+      name: proxy_network
