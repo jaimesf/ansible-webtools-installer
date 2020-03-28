@@ -9,6 +9,7 @@
     - role: proxy
     - role: proxycloud
     - role: proxydevtools
+    - role: openldap
     - role: email
     - role: collabora
     - role: onlyoffice
