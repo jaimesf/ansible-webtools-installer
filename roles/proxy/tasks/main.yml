@@ -9,7 +9,7 @@
     group: "{{ansible_ssh_user}}"
   with_items:
     - "{{directory_deploy_proxy}}/data/nginx"
-    - "{{directory_deploy_proxy}}/data/certbot"
+    - "{{directory_deploy_proxy}}/data/certbot/conf"
   become: yes
   when: install_proxy_base
 
@@ -103,13 +103,13 @@
     owner: "{{ansible_ssh_user}}"
     group: "{{ansible_ssh_user}}"
     mode: '0644'
-  when: not public_server and install_proxy_base
+  when: install_proxy_base
 
 - name: Generate DH Parameters
   openssl_dhparam:
     path: "{{directory_deploy_proxy}}/data/certbot/conf/ssl-dhparams.pem"
     size: 2048
-  when: not public_server and install_proxy_base
+  when: install_proxy_base
 
 ### Generate public cert via letsencrypt
 - name: check if cert root exist before request new cert
