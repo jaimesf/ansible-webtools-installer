@@ -24,6 +24,7 @@ Or if you need all of them, the magic words are:
 * Instant messaging and videoconference without 3rd party solutions.
 * Online document editor with MS Office ([OnlyOffice](https://www.onlyoffice.com/es/)) and Libreoffice ([Collabora](https://www.collaboraoffice.com/)) compat.
 * E-mail server to manage your domain, with SPAM filter included, via [Poste.io](https://poste.io/)
+* Ldap server to manage your users, via [OpenLDAP](https://github.com/osixia/docker-openldap)
 * [Gitlab](https://gitlab.com/) as your main VCS.
 * [Jenkins](https://jenkins.io/) as CI/CD manager.
 * [Nexus](https://www.sonatype.com/product-nexus-repository) as your main artifact repository.
@@ -70,6 +71,7 @@ Or if you need all of them, the magic words are:
         + 587 (SMTP)
         + 993 (IMAP)
         + 995 (POP3)
+        + 636 (LDAPS)
 
 ## DNS
 All names for the subdomains could be customize via ansible vars at the installation time.
@@ -77,6 +79,7 @@ All names for the subdomains could be customize via ansible vars at the installa
 - Root domain pointing to your public IP with A registry. 
 - cloud.yourdomain.com as CNAME registry to your root domain (If [Nextcloud](https://nextcloud.com/) will be installed)
 - mail.yourdomain.com as CNAME registry to your root domain (If [E-mail server](https://poste.io/) will be installed)
+- ldap.yourdomain.com as CNAME registry to your root domain (If [OpenLDAP](https://github.com/osixia/docker-openldap) will be installed)
 - collabora.yourdomain.com as CNAME registry to your root domain (If [Collabora](https://www.collaboraoffice.com/) will be installed)
 - onlyoffice.yourdomain.com as CNAME registry to your root domain (If [OnlyOffice](https://www.onlyoffice.com/es/) will be installed)
 - gitlab.yourdomain.com as CNAME registry to your root domain (If [Gitlab](https://gitlab.com/) will be installed)
@@ -94,6 +97,7 @@ Vars are distributed among multiple files on the repository.
 | **install_root** | Create root domain with https cert. Usefull if you deploy some other service on root directory on the future. | No | True |
 | **install_nextcloud** | Install nextcloud server. | No | True |
 | **install_email** | Install email server. | No | True |
+| **install_ldap** | Install LDAP server. | No | True |
 | **install_collabora** | Install collabora server. | No | True |
 | **install_onlyoffice** |Install onlyoffice server. | No | True |
 | **install_gitlab** | Install gitlab server. | No | True |
@@ -101,6 +105,7 @@ Vars are distributed among multiple files on the repository.
 | **install_nexus** | Install nexus server. | No | True |
 | **root_domain** | Your root domain (And email domain name). | **Yes** | mydomain.com |
 | **cloud_domain** | Subdomain for nextcloud installation. | No | cloud.{{root_domain}} |
+| **ldap_domain** | Subdomain for LDAP installation. | No | ldap.{{root_domain}} |
 | **mail_domain** | Subdomain for email server installation. | No | mail.{{root_domain}} |
 | **collabora_domain** | Subdomain for collabora server installation. | No. | collabora.{{root_domain}} |
 | **onlyoffice_domain** | Subdomain for onlyoffice server installation. | No | onlyoffice.{{root_domain}} |
@@ -120,7 +125,13 @@ Vars are distributed among multiple files on the repository.
 ### roles/checkdocker/vars/main.yml
 | Name | Description | Change required | Default Value  |
 |------|-------------| --------------- | -------------  |
-| **docker_compose_version** | Docker compose version to install | No | 1.24.1 |
+| **docker_compose_version** | Docker compose version to install | No | 1.25.4 |
+
+### roles/openldap/vars/main.yml
+| Name | Description | Change required | Default Value  |
+|------|-------------| --------------- | -------------  |
+| **initial_openldap_admin_password** | Password for LDAP admin user | **Yes** | changemenow |
+| **openldap_organisation_name** | Name of your organisation to LDAP server | **Yes** | organisation |
 
 ### roles/collabora/vars/main.yml
 | Name | Description | Change required | Default Value  |
@@ -158,6 +169,7 @@ Directories to save your certs:
 * **roles/proxycloud/files/collabora_certs** for Collabora certs, to default subdomain collabora.{{root_domain}}
 * **roles/proxycloud/files/onlyoffice_certs** for Onlyoffice certs, to default subdomain onlyoffice.{{root_domain}}
 * **roles/proxycloud/files/mail_certs** for e-mail certs, to default subdomain mail.{{root_domain}}
+* **roles/proxycloud/files/ldap_certs** for LDAP certs, to default subdomain ldap.{{root_domain}}
 * **roles/proxydevtools/files/gitlab_certs** for Gitlab certs, to default subdomain gitlab.{{root_domain}}
 * **roles/proxydevtools/files/jenkins_certs** for Jenkins certs, to default subdomain jenkins.{{root_domain}}
 * **roles/proxydevtools/files/nexus_certs** for Nexus certs, to default subdomain nexus.{{root_domain}}
@@ -167,7 +179,7 @@ Directories to save your certs:
 [Ansible playbook](https://docs.ansible.com/ansible/latest/user_guide/playbooks.html) is a list of independent complex tasks (Named as [roles](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html)), to execute consecutively to reach you target.
 
 Three playbooks exist:
-* **install_cloud.yml**: Define list of roles to install all cloud services (E-mail, Nextcloud, Collabora, Onlyoffice).
+* **install_cloud.yml**: Define list of roles to install all cloud services (E-mail, OpenLDAP, Nextcloud, Collabora, Onlyoffice).
 * **install_devtools.yml**: Define list of roles to install all development services (Gitlab, Jenkins, Nexus).
 * **install_all.yml**: Define list of roles to install all cloud and development services.
 
@@ -191,6 +203,7 @@ List of roles and their description
 | **collabora** | Install Collabora server (Only with **install_collabora** var to True)  | install_all, install_cloud |
 | **onlyoffice** | Install Onlyoffice server (Only with **install_onlyoffice** var to True)  | install_all, install_cloud |
 | **nextcloud** |Install Nextcloud server (Only with **install_nextcloud** var to True)  | install_all, install_cloud |
+| **openldap** |Install LDAP server (Only with **install_ldap** var to True)  | install_all, install_cloud |
 | **gitlab** | Install Gitlab server (Only with **install_gitlab** var to True)  | install_all, install_devtools |
 | **jenkins** | Install Jenkins server (Only with **install_jenkins** var to True)  | install_all, install_devtools |
 | **nexus** | Install Nexus server (Only with **install_nexus** var to True)  | install_all, install_devtools |
@@ -231,6 +244,8 @@ Steps to install:
 After the installation process you can access services on this URIs if you didn't change subdomains
 * **Nextloud**: https://cloud.yourdomain.com
 * **E-mail**: https://mail.yourdomain.com
+* **LDAP**: ldaps://ldap.yourdomain.com:636
+* **LDAP admin**: https://ldap.yourdomain.com. To log in the interface, the default user is "**cn=admin,dc=mydomain,dc=com**" and the password on var _**initial_openldap_admin_password**_
 * **Collabora**: https://collabora.yourdomain.com doesn't show you nothing. This URI is for configure collabora on Nextcloud.
 * **Onlyoffice**: https://onlyoffice.yourdomain.com doesn't show you nothing relevant. This URI is for configure Onlyoffice on Nextcloud.
 * **Gitlab**: https://gitlab.yourdomain.com
