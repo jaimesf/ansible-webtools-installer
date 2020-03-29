@@ -1,0 +1,38 @@
+version: '3' 
+
+services:
+  ldap:
+    container_name: ldap
+    image: osixia/openldap
+    restart: unless-stopped
+    volumes:
+      - {{directory_volumes_cloud}}/ldap/lib:/var/lib/ldap
+      - {{directory_volumes_cloud}}/ldap/slapd:/etc/ldap/slapd.d
+      - {{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}:/container/service/slapd/assets/certs
+    ports:
+      - 636:636
+    environment:
+      LDAP_ORGANISATION: {{openldap_organisation_name}}
+      LDAP_DOMAIN: {{root_domain}}
+      LDAP_ADMIN_PASSWORD: {{initial_openldap_admin_password}}
+      LDAP_CONFIG_PASSWORD: {{initial_openldap_admin_password}}
+      LDAP_TLS_CRT_FILENAME: cert1.pem
+      LDAP_TLS_KEY_FILENAME: privkey1.pem
+      LDAP_TLS_CA_CRT_FILENAME: fullchain1.pem
+      LDAP_TLS_VERIFY_CLIENT: try
+
+  ldap-admin:
+    container_name: ldap-admin
+    image: osixia/phpldapadmin:latest
+    hostname: {{ldap_domain}}
+    restart: unless-stopped
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: ldap
+      PHPLDAPADMIN_LDAP_CLIENT_TLS: "false"
+
+
+networks:
+  default:
+    external:
+      name: proxy_network
+

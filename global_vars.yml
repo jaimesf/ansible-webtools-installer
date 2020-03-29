@@ -14,6 +14,9 @@ install_nextcloud: True
 # Install email server
 install_email: True
 
+# Install ldap server
+install_ldap: True
+
 # Install collabora server
 install_collabora: True
 
@@ -29,7 +32,7 @@ install_jenkins: True
 # Install nexus server
 install_nexus: True
 
-# Root domain (And email domain name)
+# Root domain (And email/ldap domain name)
 root_domain: "mydomain.com"
 
 # Subdomain for nextcloud installation
@@ -37,6 +40,9 @@ cloud_domain: "cloud.{{root_domain}}"
 
 # Subdomain for email server installation
 mail_domain: "mail.{{root_domain}}"
+
+# Subdomain for ldap server installation
+ldap_domain: "ldap.{{root_domain}}"
 
 # Subdomain for collabora server installation
 collabora_domain: "collabora.{{root_domain}}"

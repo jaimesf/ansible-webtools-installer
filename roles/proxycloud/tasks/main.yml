@@ -35,6 +35,15 @@
     mode: '0644'
   when: install_onlyoffice
 
+- name: Upload ldap.conf without https
+  template:
+    src: "templates/ldap.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/ldap.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_ldap
+
 ### Create local certs directories
 - name: Create cloud cert dirs
   file:
@@ -79,6 +88,17 @@
     group: "{{ansible_ssh_user}}"
   become: yes
   when: not public_server and install_onlyoffice
+
+- name: Create ldap cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_ldap
 
 
 ### Upload local certs
@@ -211,12 +231,47 @@
     mode: '0644'
   when: not public_server and install_onlyoffice
 
-- name: Create cert fullchain from cert and chain collabora
+- name: Create cert fullchain from cert and chain onlyoffice
   shell: cat cert.pem chain.pem > fullchain.pem
   args:
     chdir: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{onlyoffice_domain}}/"
     creates: fullchain.pem
   when: not public_server and install_onlyoffice
+
+- name: Copy cert cert ldap
+  copy:
+    src: files/ldap_certs/cert.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}/cert1.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_ldap
+
+- name: Copy cert chain ldap
+  copy:
+    src: files/ldap_certs/chain.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}/chain1.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_ldap
+
+- name: Copy cert key ldap
+  copy:
+    src: files/ldap_certs/privkey.pem
+    dest: "{{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}/privkey1.pem"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: not public_server and install_ldap
+
+- name: Create cert fullchain from cert and chain ldap
+  shell: cat cert1.pem chain1.pem > fullchain1.pem
+  args:
+    chdir: "{{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}/"
+    creates: fullchain1.pem
+  when: not public_server and install_ldap
+
 
 ### Generate public certs via letsencrypt
 - name: check if cert cloud exist before request new cert
@@ -288,6 +343,41 @@
   fail:
     msg: "Cert for {{mail_domain}} not generated. Please check logs."
   when: public_server and install_email and not cert_mail_directory.stat.exists
+
+- name: check if cert ldap exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{ldap_domain}}/"
+  register: cert_ldap_directory
+  when: public_server and install_ldap
+
+- name: Set ldap domain to cert
+  set_fact:
+    domain_certbot: "{{ldap_domain}}"
+  when: public_server and install_ldap and not cert_ldap_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh ldap
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_ldap and not cert_ldap_directory.stat.exists
+
+- name: Execute cert ldap
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_ldap and not cert_ldap_directory.stat.exists
+
+- name: check if cert ldap exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{ldap_domain}}/"
+  register: cert_ldap_directory
+  when: public_server and install_ldap
+
+- name: Fail if ldap cert not exist
+  fail:
+    msg: "Cert for {{ldap_domain}} not generated. Please check logs."
+  when: public_server and install_ldap and not cert_ldap_directory.stat.exists
 
 - name: check if cert collabora exist before request new cert
   stat: 

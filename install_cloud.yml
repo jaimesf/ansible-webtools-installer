@@ -7,6 +7,7 @@
     - role: checkdomainscloud
     - role: proxy
     - role: proxycloud
+    - role: openldap
     - role: email
     - role: collabora
     - role: onlyoffice

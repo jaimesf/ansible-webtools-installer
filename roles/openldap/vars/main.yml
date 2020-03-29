@@ -1,0 +1,4 @@
+---
+initial_openldap_admin_password: changemenow
+openldap_organisation_name: organisation
+

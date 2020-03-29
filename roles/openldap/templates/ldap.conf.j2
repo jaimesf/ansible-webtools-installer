@@ -1,0 +1,40 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ldap_domain}};
+    location / {
+       return 301 https://$host$request_uri;
+    }
+
+    location /.well-known/acme-challenge/ {
+       root /var/www/certbot;
+    }
+
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{ldap_domain}};
+
+    set $upstream_ldap https://ldap-admin;
+
+    location / {
+        proxy_pass $upstream_ldap;
+        proxy_redirect     off;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Host $server_name;
+
+    }
+
+
+
+    ssl_certificate /etc/letsencrypt/archive/{{ldap_domain}}/fullchain1.pem;
+    ssl_certificate_key /etc/letsencrypt/archive/{{ldap_domain}}/privkey1.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+

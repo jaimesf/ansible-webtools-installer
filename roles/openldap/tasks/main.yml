@@ -1,0 +1,41 @@
+---
+- name: Create ldap dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_cloud}}/ldap"
+    - "{{directory_volumes_cloud}}/ldap/lib/"
+    - "{{directory_volumes_cloud}}/ldap/slapd/"
+  become: yes
+  when: install_ldap
+
+- name: Upload docker-compose ldap
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_cloud}}/ldap/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_ldap
+
+- name: Execute docker-compose
+  command: chdir="{{ directory_scripts_cloud }}/ldap/" docker-compose up -d
+  when: install_ldap
+
+- name: Upload ldap.conf final public
+  template:
+    src: "templates/ldap.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/ldap.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_ldap
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_ldap
