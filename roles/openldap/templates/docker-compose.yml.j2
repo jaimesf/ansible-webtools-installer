@@ -24,16 +24,10 @@ services:
   ldap-admin:
     container_name: ldap-admin
     image: osixia/phpldapadmin:latest
-    ports:
-      - 6443:443
-    volumes:
-      - {{directory_deploy_proxy}}/data/certbot/conf/archive/{{ldap_domain}}:/container/service/phpldapadmin/assets/apache2/certs
+    hostname: {{ldap_domain}}
+    restart: unless-stopped
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: ldap
-      PHPLDAPADMIN_HTTPS: "true"
-      PHPLDAPADMIN_HTTPS_CRT_FILENAME: "cert1.pem"
-      PHPLDAPADMIN_HTTPS_KEY_FILENAME: "privkey1.pem"
-      PHPLDAPADMIN_HTTPS_CA_CRT_FILENAME: "fullchain1.pem"
       PHPLDAPADMIN_LDAP_CLIENT_TLS: "false"
 
 

@@ -27,4 +27,15 @@
   command: chdir="{{ directory_scripts_cloud }}/ldap/" docker-compose up -d
   when: install_ldap
 
+- name: Upload ldap.conf final public
+  template:
+    src: "templates/ldap.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/ldap.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_ldap
 
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_ldap
