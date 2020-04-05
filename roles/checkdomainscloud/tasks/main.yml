@@ -121,4 +121,21 @@
     msg: "Public IP ({{public_ip}}) is not the same as {{onlyoffice_domain}} ip({{domain_onlyoffice_ip}})"
   when: public_server and install_onlyoffice and public_ip != domain_onlyoffice_ip
 
+- name: Get server IP ldap domain
+  command: "dig +short {{ldap_domain}}"
+  register: command_domain_ldap_ip
+  when: public_server and install_ldap
+
+- name: Set domain ldap ip var
+  set_fact:
+    domain_ldap_ip: "{{command_domain_ldap_ip.stdout_lines[-1]}}"
+  when: public_server and install_ldap
+
+- debug: msg="Public IP for {{ldap_domain}} is {{domain_ldap_ip}}"
+  when: public_server and install_ldap
+
+- name: Check public ip with ldap dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{ldap_domain}} ip({{domain_ldap_ip}})"
+  when: public_server and install_ldap and public_ip != domain_ldap_ip
 

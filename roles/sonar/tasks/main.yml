@@ -1,0 +1,80 @@
+---
+- name: Create Sonar dirs
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  with_items:
+    - "{{directory_scripts_devtools}}/sonar"
+    - "{{directory_volumes_devtools}}/sonar/extensions"
+    - "{{directory_volumes_devtools}}/sonar/logs"
+    - "{{directory_volumes_devtools}}/sonar/data"
+    - "{{directory_volumes_devtools}}/sonar/postgres"
+  become: yes
+  when: install_sonar
+
+- name: Upload updateSonar.sh
+  template:
+    src: "templates/updateSonar.sh.j2"
+    dest: "{{directory_scripts_devtools}}/sonar/updateSonar.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: install_sonar
+
+- name: Upload docker-compose sonar
+  template:
+    src: "templates/docker-compose.yml.j2"
+    dest: "{{directory_scripts_devtools}}/sonar/docker-compose.yml"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_sonar
+
+- name: Upload addVariablesConfig.sh
+  template:
+    src: "templates/addVariablesConfig.sh.j2"
+    dest: "{{directory_scripts_devtools}}/sonar/addVariablesConfig.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: 'u=rwx,g=rx,o=rx'
+  when:  install_sonar
+
+- name: Execute addVariablesConfig.sh
+  command: chdir="{{ directory_scripts_devtools }}/sonar/" ./addVariablesConfig.sh
+  become: yes
+  when:  install_sonar
+
+- name: reset ssh connection to allow user changes to affect sysctl changes
+  meta: reset_connection
+  when: install_sonar
+
+- name: Remove addVariablesConfig.sh file
+  file:
+    state: absent
+    path: "{{directory_scripts_devtools}}/sonar/addVariablesConfig.sh"
+  become: yes
+  when:  install_sonar
+
+- name: Execute docker-compose sonar
+  command: chdir="{{ directory_scripts_devtools }}/sonar/" docker-compose up -d
+  when: install_sonar
+
+- name: Upload sonar.conf final public
+  template:
+    src: "templates/sonar.conf.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/sonar.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when: install_sonar
+
+- name: Restart nginx
+  command: "docker restart nginx"
+  when: install_sonar
+
+
+

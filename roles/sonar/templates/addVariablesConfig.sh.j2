@@ -1,0 +1,12 @@
+#!/bin/bash
+echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
+echo 'fs.file-max=65536' >> /etc/sysctl.conf
+echo '* soft     nproc          65536' >> /etc/security/limits.conf    
+echo '* hard     nproc          65536' >> /etc/security/limits.conf   
+echo '* soft     nofile         65536' >> /etc/security/limits.conf   
+echo '* hard     nofile         65536' >> /etc/security/limits.conf
+echo 'root soft     nproc          65536' >> /etc/security/limits.conf    
+echo 'root hard     nproc          65536' >> /etc/security/limits.conf   
+echo 'root soft     nofile         65536' >> /etc/security/limits.conf   
+echo 'root hard     nofile         65536' >> /etc/security/limits.conf
+sysctl -p

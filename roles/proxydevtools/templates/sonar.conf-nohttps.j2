@@ -1,0 +1,17 @@
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{sonar_domain}};
+    location / {
+       return 301 https://$host$request_uri;
+    }
+
+    location /.well-known/acme-challenge/ {
+       root /var/www/certbot;
+    }
+
+}
+
+
+

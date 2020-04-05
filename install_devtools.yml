@@ -10,5 +10,6 @@
     - role: gitlab
     - role: jenkins
     - role: nexus
+    - role: sonar
     - role: showadminpasswords
 
