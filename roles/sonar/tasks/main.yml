@@ -34,6 +34,31 @@
     mode: '0644'
   when: install_sonar
 
+- name: Upload addVariablesConfig.sh
+  template:
+    src: "templates/addVariablesConfig.sh.j2"
+    dest: "{{directory_scripts_devtools}}/sonar/addVariablesConfig.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: 'u=rwx,g=rx,o=rx'
+  when:  install_sonar
+
+- name: Execute addVariablesConfig.sh
+  command: chdir="{{ directory_scripts_devtools }}/sonar/" ./addVariablesConfig.sh
+  become: yes
+  when:  install_sonar
+
+- name: reset ssh connection to allow user changes to affect sysctl changes
+  meta: reset_connection
+  when: install_sonar
+
+- name: Remove addVariablesConfig.sh file
+  file:
+    state: absent
+    path: "{{directory_scripts_devtools}}/sonar/addVariablesConfig.sh"
+  become: yes
+  when:  install_sonar
+
 - name: Execute docker-compose sonar
   command: chdir="{{ directory_scripts_devtools }}/sonar/" docker-compose up -d
   when: install_sonar

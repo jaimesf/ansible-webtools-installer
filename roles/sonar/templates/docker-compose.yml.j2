@@ -2,30 +2,32 @@ version: '3.7'
 
 services:
   sonar:
-      image: sonarqube:latest
-      container_name: sonar
-      depends_on: 
-         - postgres
-      volumes:
-         - {{directory_volumes_devtools}}/sonar/data:/opt/sonarqube/data
-         - {{directory_volumes_devtools}}/sonar/logs:/opt/sonarqube/logs
-         - {{directory_volumes_devtools}}/sonar/extensions:/opt/sonarqube/extensions
-         - /etc/localtime:/etc/localtime:ro
-      environment:
-         - SONAR_JDBC_USERNAME=sonar
-         - SONAR_JDBC_PASSWORD={{sonar_postgres_password}}
-         - SONAR_JDBC_URL=jdbc:postgresql://postgres_sonar/sonar
+    image: sonarqube:latest
+    container_name: sonar
+    restart: unless-stopped
+    depends_on: 
+      - postgres_sonar
+    volumes:
+      - {{directory_volumes_devtools}}/sonar/data:/opt/sonarqube/data
+      - {{directory_volumes_devtools}}/sonar/logs:/opt/sonarqube/logs
+      - {{directory_volumes_devtools}}/sonar/extensions:/opt/sonarqube/extensions
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=passwordsonar
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres_sonar/sonar
 
-   postgres_sonar:
-      image: postgres:12.2
-      container_name: postgres_sonar
-      volumes:
-         - {{directory_volumes_devtools}}/sonar/postgres:/var/lib/postgresql/data
-         - /etc/localtime:/etc/localtime:ro
-      environment:
-         - POSTGRES_DB=sonar
-         - POSTGRES_USER=sonar
-         - POSTGRES_PASSWORD={{sonar_postgres_password}}
+  postgres_sonar:
+    image: postgres:12.2
+    container_name: postgres_sonar
+    restart: unless-stopped
+    volumes:
+      - {{directory_volumes_devtools}}/sonar/postgres:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - POSTGRES_DB=sonar
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=passwordsonar
 
 
 networks:

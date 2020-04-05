@@ -63,7 +63,7 @@ jenkins_domain: "jenkins.{{root_domain}}"
 nexus_domain: "nexus.{{root_domain}}"
 
 # Subdomain for sonar installation
-nexus_domain: "sonar.{{root_domain}}"
+sonar_domain: "sonar.{{root_domain}}"
 
 # Email to use on letsencrypt cert generator
 email_certbot: "admin@mydomain.com"

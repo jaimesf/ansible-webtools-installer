@@ -32,21 +32,20 @@
 - name: Get server IP gitlab domain
   command: "dig +short {{gitlab_domain}}"
   register: command_domain_gitlab_ip
-  when: public_server
+  when: public_server and install_gitlab
 
 - name: Set domain gitlab ip var
   set_fact:
     domain_gitlab_ip: "{{command_domain_gitlab_ip.stdout_lines[-1]}}"
-  when: public_server
+  when: public_server and install_gitlab
 
 - debug: msg="Public IP for {{gitlab_domain}} is {{domain_gitlab_ip}}"
-  when: public_server
+  when: public_server and install_gitlab
 
 - name: Check public ip with gitlab dns
   fail:
     msg: "Public IP ({{public_ip}}) is not the same as {{gitlab_domain}} ip({{domain_gitlab_ip}})"
-  when: public_server and public_ip != domain_gitlab_ip
-
+  when: public_server and install_gitlab and public_ip != domain_gitlab_ip
 
 - name: Get server IP jenkins domain
   command: "dig +short {{jenkins_domain}}"
@@ -83,4 +82,22 @@
   fail:
     msg: "Public IP ({{public_ip}}) is not the same as {{nexus_domain}} ip({{domain_nexus_ip}})"
   when: public_server and install_nexus and public_ip != domain_nexus_ip
+
+- name: Get server IP sonar domain
+  command: "dig +short {{sonar_domain}}"
+  register: command_domain_sonar_ip
+  when: public_server and install_sonar
+
+- name: Set domain sonar ip var
+  set_fact:
+    domain_sonar_ip: "{{command_domain_sonar_ip.stdout_lines[-1]}}"
+  when: public_server and install_sonar
+
+- debug: msg="Public IP for {{sonar_domain}} is {{domain_sonar_ip}}"
+  when: public_server and install_sonar
+
+- name: Check public ip with sonar dns
+  fail:
+    msg: "Public IP ({{public_ip}}) is not the same as {{sonar_domain}} ip({{sonar_nexus_ip}})"
+  when: public_server and install_sonar and public_ip != domain_sonar_ip
 

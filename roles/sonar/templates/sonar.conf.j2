@@ -21,7 +21,7 @@ server {
     add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
     client_max_body_size 20000M;
 
-    set $upstream_sonar http://gitlab:9000;
+    set $upstream_sonar http://sonar:9000;
 
     location / {
         proxy_pass $upstream_sonar;
