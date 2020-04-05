@@ -26,6 +26,15 @@
     mode: '0644'
   when:  install_nexus
 
+- name: Upload sonar.conf without https
+  template:
+    src: "templates/sonar.conf-nohttps.j2"
+    dest: "{{directory_deploy_proxy}}/data/nginx/sonar.conf"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0644'
+  when:  install_sonar
+
 ### Create local certs directories
 - name: Create gitlab cert dirs
   file:
@@ -59,6 +68,17 @@
     group: "{{ansible_ssh_user}}"
   become: yes
   when: not public_server and install_nexus
+
+- name: Create sonar cert dirs
+  file:
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{sonar_domain}}/"
+    state: directory
+    mode: '0744'
+    recurse: yes
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+  become: yes
+  when: not public_server and install_sonar
 
 ### Upload local certs
 - name: Copy cert cert gitlab
@@ -269,13 +289,48 @@
     msg: "Cert for {{nexus_domain}} not generated. Please check logs."
   when: public_server and install_nexus and not cert_nexus_directory.stat.exists
 
+- name: check if cert sonar exist before request new cert
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{sonar_domain}}/"
+  register: cert_sonar_directory
+  when: public_server and install_sonar
+
+- name: Set sonar domain to cert
+  set_fact:
+    domain_certbot: "{{sonar_domain}}"
+  when: public_server and install_sonar and not cert_sonar_directory.stat.exists
+
+- name: Upload init-letsencrypt.sh sonar
+  template:
+    src: "templates/init-letsencrypt.sh.j2"
+    dest: "{{directory_deploy_proxy}}/init-letsencrypt.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: '0755'
+  when: public_server and install_sonar and not cert_sonar_directory.stat.exists
+
+- name: Execute cert sonar
+  command: chdir="{{ directory_deploy_proxy }}/" ./init-letsencrypt.sh
+  when: public_server and install_sonar and not cert_sonar_directory.stat.exists
+
+- name: check if cert sonar exist
+  stat: 
+    path: "{{directory_deploy_proxy}}/data/certbot/conf/live/{{sonar_domain}}/"
+  register: cert_sonar_directory
+  when: public_server and install_sonar
+
+- name: Fail if sonar cert not exist
+  fail:
+    msg: "Cert for {{sonar_domain}} not generated. Please check logs."
+  when: public_server and install_sonar and not cert_sonar_directory.stat.exists
+
 - name: Remove containers proxy
   command: chdir="{{ directory_deploy_proxy }}/" docker-compose down -v
-  when: install_gitlab or install_jenkins or install_nexus
+  when: install_gitlab or install_jenkins or install_nexus or install_sonar
 
 - name: Execute docker-compose proxy
   command: chdir="{{ directory_deploy_proxy }}/" docker-compose up -d
-  when: install_gitlab or install_jenkins or install_nexus
+  when: install_gitlab or install_jenkins or install_nexus or install_sonar
 
 
 

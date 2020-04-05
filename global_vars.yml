@@ -32,6 +32,9 @@ install_jenkins: True
 # Install nexus server
 install_nexus: True
 
+# Install sonar server
+install_sonar: True
+
 # Root domain (And email/ldap domain name)
 root_domain: "mydomain.com"
 
@@ -58,6 +61,9 @@ jenkins_domain: "jenkins.{{root_domain}}"
 
 # Subdomain for nexus installation
 nexus_domain: "nexus.{{root_domain}}"
+
+# Subdomain for sonar installation
+nexus_domain: "sonar.{{root_domain}}"
 
 # Email to use on letsencrypt cert generator
 email_certbot: "admin@mydomain.com"
