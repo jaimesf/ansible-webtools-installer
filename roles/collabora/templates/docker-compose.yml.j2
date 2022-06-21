@@ -13,7 +13,7 @@ services:
       - username=admin
       - password={{secret_collabora}}
       - server_name={{collabora_domain}}
-      - domain={{cloud_domain}}
+      - aliasgroup1=https://{{cloud_domain}}
 networks:
   default:
     external:

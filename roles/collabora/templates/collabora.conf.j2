@@ -21,7 +21,7 @@ server {
     set $upstream_collabora http://collabora:9980;
 
     # static files
-    location ^~ /loleaflet {
+    location ^~ /browser {
         proxy_pass $upstream_collabora;
         proxy_set_header Host $http_host;
     }
@@ -39,7 +39,7 @@ server {
     }
 
     # main websocket
-    location ~ ^/lool/(.*)/ws$ {
+    location ~ ^/cool/(.*)/ws$ {
         proxy_pass $upstream_collabora;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
@@ -48,13 +48,13 @@ server {
     }
 
     # download, presentation and image upload
-    location ~ ^/lool {
-        proxy_pass $upstream_collabora;
-        proxy_set_header Host $http_host;
+    location ~ ^/(c|l)ool {
+      proxy_pass $upstream_collabora;
+      proxy_set_header Host $http_host;
     }
 
     # Admin Console websocket
-    location ^~ /lool/adminws {
+    location ^~ /cool/adminws {
         proxy_pass $upstream_collabora;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
